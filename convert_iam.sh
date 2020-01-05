@@ -3,6 +3,7 @@
 set -ue
 
 FORCE=false
+GROUP_MODULE_PATH=../../tf/modules/iam/group
 IMPORT_DIR=imported
 CONVERT_DIR=converted
 TF_COMMON=tf/common
@@ -92,6 +93,50 @@ content=`terraform state list | grep '^module\.user\.aws_iam_user\.' | sed 's/mo
 printf "output\"users\"{\nvalue = {\n$content\n}\n}" | terraform fmt - > user/output.tf
 echo "[convert] iamu create user/output.tf done"
 echo "[convert] iamu done"
+
+###### IAM GROUP #########
+echo "[convert] iamg rm tf"
+if [ -f iamg.tf ]; then
+    rm iamg.tf
+fi
+echo "[convert] iamg rm tf done"
+
+echo "[convert] iamg mv state"
+for g in `terraform state list | grep '^aws_iam_group\.' | sed 's/aws_iam_group\.\(.*\)/\1/'`; do terraform state mv aws_iam_group.$g module.group.module.$g.aws_iam_group.group; done
+rm -f terraform.tfstate.*.backup
+echo "[convert] iamg mv state done"
+
+tf=group/main.tf;
+echo "[convert] create $tf"
+rm -f $tf; for g in `terraform state list | grep 'aws_iam_group\.' | sed 's/^module\.group\.module\.\(.*\)\.aws_iam_group\..*/\1/'`; do printf "module\"$g\"{\nsource=\"$GROUP_MODULE_PATH\"\ngroup_name=\"$g\"\nuser_name_list=var.group_members[\"$g\"]\n}\n" >> $tf; done;
+terraform fmt $tf
+echo "[convert] create $tf done"
+
+echo "[convert] iamg create group/output.tf"
+content=`terraform state list | grep 'aws_iam_group\.' | sed 's/^module\.group\.module\.\(.*\)\.aws_iam_group\..*/"\1"=module.\1.group,/'`;
+printf "output\"groups\"{\nvalue = {\n$content\n}\n}" | terraform fmt - > group/output.tf
+echo "[convert] iamg create group/output.tf done"
+echo "[convert] iamg done"
+
+##### IAM GROUP MEMBERSHIP ##########
+
+echo "[convert] iamgm mv state"
+for g in `terraform state list | grep '^aws_iam_group_membership\.' | sed 's/aws_iam_group_membership.\(.*\)/\1/'`; do terraform state mv aws_iam_group_membership.$g module.group.module.$g.aws_iam_group_membership.group_membership; done
+rm -f terraform.tfstate.*
+echo "[convert] iamgm mv state done"
+
+echo "[convert] iamgm create group_membership.tf"
+tf=group_membership.tf; rm -f $tf;
+printf "module\"group\"{\nsource = \"./group\"\ngroup_members = {\n" >> $tf; for g in `grep aws_iam_group_membership iamgm.tf | sed 's/.*aws_iam_group_membership" "\(.*\)".*/\1/'`; do user_str=`grep -A 2 -e "aws_iam_group_membership\" \"$g\"" iamgm.tf | grep users | sed -e 's/.*users = \[\([^]]*\)\]/\1/' -e 's/\"//g' -e 's/,//g'`; printf "\"$g\"=[\n" >>$tf; for u in `printf "$user_str"`; do printf "module.user.users[\"$u\"].name,\n" >> $tf; done; printf "],\n" >> $tf; done; printf "}\n}\n" >> $tf
+terraform fmt $tf
+echo "[convert] iamgm create group_membership.tf done"
+echo "[convert] copy group/variables.tf"
+cp ../$TF_CONVERT/group_variables.tf group/variables.tf
+echo "[convert] copy group/variables.tf done"
+
+echo "[convert] rm iamgm.tf"
+rm iamgm.tf
+echo "[convert] rm iamgm.tf done"
 
 cp ../$TF_CONVERT/output.tf .
 

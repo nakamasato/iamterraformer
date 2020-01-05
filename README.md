@@ -26,7 +26,72 @@ https://github.com/hashicorp/terraform/blob/master/terraform/eval_for_each.go#L2
 
 > The "for_each" value depends on resource attributes that cannot be determined until apply, so Terraform cannot predict how many instances will be created. To work around this, use the -target argument to first apply only the resources that the for_each depends on.
 
+## Usage
 
+1. Import the existing resourcs.
+
+    ```
+    ./import_iam.sh
+    ```
+
+    it will generate the following files in `imported` directory.
+
+    ```
+    tree imported
+    imported
+    ├── backend.tf
+    ├── iam.tfstate
+    ├── iamg.tf
+    ├── iamgm.tf
+    ├── iamgpa.tf
+    ├── iamp.tf
+    ├── iamr.tf
+    ├── iamrpa.tf
+    ├── iamu.tf
+    ├── iamupa.tf
+    ├── plan_result.txt
+    └── provider.tf
+
+    0 directories, 12 files
+    ```
+
+1. Convert the imported tf resources into the designed module.
+
+    ```
+    ./convert_iam.sh
+    ```
+
+    it will generate the following files in `converted` directory.
+
+    ```
+    tree converted
+    converted
+    ├── backend.tf
+    ├── group
+    │   ├── main.tf
+    │   ├── output.tf
+    │   └── variables.tf
+    ├── group_membership.tf
+    ├── iam.tfstate
+    ├── iamgpa.tf
+    ├── iamrpa.tf
+    ├── iamupa.tf
+    ├── main.tf
+    ├── output.tf
+    ├── policy
+    │   ├── iamp.tf
+    │   └── output.tf
+    ├── provider.tf
+    ├── role
+    │   ├── iamr.tf
+    │   └── output.tf
+    ├── terraform.tfstate
+    └── user
+        ├── iamu.tf
+        └── output.tf
+
+    4 directories, 19 files
+    ```
 
 ## Import the existing resources into the module
 
@@ -176,8 +241,8 @@ No changes. Infrastructure is up-to-date.
      output "iam" {
        value = {
          policy = module.policy.policies,
-    +    user   = module.user.users,
          role   = module.role.roles,
+    +    user   = module.user.users,
        }
      }
     ```
@@ -197,42 +262,33 @@ No changes. Infrastructure is up-to-date.
 
     ```
     rm iamg.tf
-    for r in `terraform state list | grep '^aws_iam_group\.'`; do terraform state mv $r module.dev.module.group.$r; done
-    rm terraform.tfstate.*
-    for g in `terraform state list | grep '\.aws_iam_group\.' | sed 's/.*\.aws_iam_group\.\(.*\)/\1/'`; do terraform state mv module.dev.module.group.aws_iam_group.$g module.dev.module.group.module.$g.aws_iam_group.group; done
-    rm terraform.tfstate.*
+    for g in `terraform state list | grep '^aws_iam_group\.' | sed 's/aws_iam_group\.\(.*\)/\1/'`; do terraform state mv aws_iam_group.$g module.group.module.$g.aws_iam_group.group; done
+    rm -f terraform.tfstate.*
     ```
 
-    1. create `dev/group/main.tf`
+    1. create `group/main.tf`
 
     ```
-     tf=dev/group/main.tf; rm -f $tf; for g in `terraform state list | grep 'aws_iam_group\.' | sed 's/.*aws_iam_group\.\(.*\)/\1/'`; do echo "module\"$g\"{\nsource=\"../../../modules/naka/iam/group\"\ngroup_name=\"$g\"\nuser_name_list=var.group_members[\"$g\"]\n}\n" >> $tf; done; terraform fmt $tf
+    GROUP_MODULE_PATH=../../tf/modules/iam/group
+    tf=group/main.tf; rm -f $tf; for g in `terraform state list | grep 'aws_iam_group\.' | sed 's/.*aws_iam_group\.\(.*\)/\1/'`; do printf "module\"$g\"{\nsource=\"$GROUP_MODULE_PATH\"\ngroup_name=\"$g\"\nuser_name_list=var.group_members[\"$g\"]\n}\n" >> $tf; done; terraform fmt $tf
     ```
 
-    1. create `dev/group/output.tf`
+    1. create `group/output.tf`
     ```
-    content=`terraform state list | grep '^module\.dev\.module\.group\.aws_iam_group\.' | sed 's/module.dev.module.group.aws_iam_group.\(.*\)/    "\1" = module.\1.group,/'`; echo "output\"groups\"{\nvalue = {\n$content\n}\n}" | terraform fmt - > dev/group/output.tf
+    content=`terraform state list | grep '^module\.group\.aws_iam_group\.' | sed 's/module.group.aws_iam_group.\(.*\)/    "\1" = module.\1.group,/'`; printf "output\"groups\"{\nvalue = {\n$content\n}\n}" | terraform fmt - > group/output.tf
     ```
 
-    1. `dev/output.tf`
+    1. `output.tf`
 
     ```diff
      output "dev" {
        value = {
-    +     group  = module.group.groups,
          policy = module.policy.policies,
          user   = module.user.users,
          role   = module.role.roles,
+    +    group  = module.group.groups,
        }
      }
-    ```
-
-    1. add the following to `dev/main.tf`
-
-    ```
-    module "group" {
-      source = "./group"
-    }
     ```
 
     1. move group membership
@@ -242,13 +298,13 @@ No changes. Infrastructure is up-to-date.
     rm terraform.tfstate.*
     ```
 
-    1. write the membership in `dev/main.tf` <- Very wasteful
+    1. write the membership in `main.tf` <- Very wasteful
 
     ```
-    tf=dev/group_membership.tf; rm -f $tf; echo "module\"group\"{\nsource = \"./group\"\ngroup_members = {" >> $tf; for g in `grep aws_iam_group_membership iamgm.tf | sed 's/.*aws_iam_group_membership" "\(.*\)".*/\1/'`; do user_str=`grep -A 2 -e "aws_iam_group_membership\" \"$g\"" iamgm.tf | grep users | sed -e 's/.*users = \[\([^]]*\)\]/\1/' -e 's/\"//g' -e 's/,//g'`; echo "\"$g\"=[" >>$tf; for u in `echo "$user_str"`; do echo "module.user.users[\"$u\"].name," >> $tf; done; echo "]," >> $tf; done; echo "}\n}" >> $tf; terraform fmt $tf
+    tf=group_membership.tf; rm -f $tf; printf "module\"group\"{\nsource = \"./group\"\ngroup_members = {" >> $tf; for g in `grep aws_iam_group_membership iamgm.tf | sed 's/.*aws_iam_group_membership" "\(.*\)".*/\1/'`; do user_str=`grep -A 2 -e "aws_iam_group_membership\" \"$g\"" iamgm.tf | grep users | sed -e 's/.*users = \[\([^]]*\)\]/\1/' -e 's/\"//g' -e 's/,//g'`; printf "\"$g\"=[" >>$tf; for u in `printf "$user_str"`; do printf "module.user.users[\"$u\"].name," >> $tf; done; printf "]," >> $tf; done; printf "}\n}" >> $tf; terraform fmt $tf
     ```
 
-    1. `dev/group/variables.tf`
+    1. `group/variables.tf`
 
     ```
     variable "group_members" {
@@ -271,7 +327,7 @@ No changes. Infrastructure is up-to-date.
     No changes. Infrastructure is up-to-date.
     ```
 
-1. move iamgpa
+1. move iamgpa (Not implemented)
 
     1. Create `dev/policy_attachment.tf`
 

@@ -3,5 +3,6 @@ output "iam" {
     policy = module.policy.policies,
     role = module.role.roles,
     user = module.user.users,
+    group  = module.group.groups,
   }
 }
