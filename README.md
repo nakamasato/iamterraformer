@@ -61,15 +61,23 @@ No changes. Infrastructure is up-to-date.
 |`aws_iam_role_policy_attachment`|`module.dev.policy-attachment.aws_iam_role_policy_attachment.attachment["<role_name>-<policy_name>"]`|
 
 
-1. Prepare `main.tf`, `output.tf`, `dev/main.tf`, `dev/output.tf`
+1. Prepare `main.tf`, `output.tf`
 
 1. move policy
+
+    1. `main.tf`
+
+    ```
+    module "policy" {
+      source = "./policy"
+    }
+    ```
 
     1. move state
     ```
     mv iamp.tf policy
     for r in `terraform state list | grep '^aws_iam_policy\.'`; do terraform state mv $r module.policy.$r; done
-    rm terraform.tfstate.*
+    rm -f terraform.tfstate.*
     ```
 
     1. create `policy/output.tf`
@@ -92,51 +100,48 @@ No changes. Infrastructure is up-to-date.
 
     ```
     terraform init
-    terraform plan
+    terraform plan -target=module.policy
     ...
     No changes. Infrastructure is up-to-date.
     ```
 
 1. move role
 
-    1. move state
-    ```
-    mv iamr.tf dev/role
-    for r in `terraform state list | grep ^aws_iam_role\.`; do terraform state mv $r module.dev.module.role.$r; done
-    rm terraform.tfstate.*
-    ```
-
-    1. create `dev/role/output.tf`
-
-    ```
-    content=`terraform state list | grep '^module\.dev\.module\.role\.aws_iam_role\.' | sed 's/module.dev.module.role.\(.*\)/    \(\1.name\) = \1,/'`; echo "output\"roles\"{\nvalue = {\n$content\n}\n}" | terraform fmt - > dev/role/output.tf
-    ```
-
-    1. `dev/output.tf`
+    1. `main.tf`
 
     ```diff
-     output "dev" {
+    + module "role" {
+    +   source = "./role"
+    + }
+    ```
+    1. move state
+    ```
+    mv iamr.tf role
+    for r in `terraform state list | grep ^aws_iam_role\.`; do terraform state mv $r module.dev.module.role.$r; done
+    rm -f terraform.tfstate.*
+    ```
+
+    1. create `role/output.tf`
+
+    ```
+    content=`terraform state list | grep '^module\.dev\.module\.role\.aws_iam_role\.' | sed 's/module.dev.module.role.\(.*\)/    \(\1.name\) = \1,/'`; printf "output\"roles\"{\nvalue = {\n$content\n}\n}" | terraform fmt - > role/output.tf
+    ```
+
+    1. `output.tf`
+
+    ```diff
+     output "iam" {
        value = {
-         #group  = module.group.groups,
          policy = module.policy.policies,
-         #user   = module.user.users,
-    +     role   = module.role.roles,
+    +    role   = module.role.roles,
        }
      }
-    ```
-
-    1. add the following to `dev/main.tf`
-
-    ```
-    module "role" {
-      source = "./role"
-    }
     ```
 
     1. confirm
     ```
     terraform init
-    terraform plan
+    terraform plan -target=module.role
     ...
     No changes. Infrastructure is up-to-date.
     ```
