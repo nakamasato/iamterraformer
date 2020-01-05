@@ -67,26 +67,23 @@ No changes. Infrastructure is up-to-date.
 
     1. move state
     ```
-    mv iamp.tf dev/policy
-    for r in `terraform state list | grep ^aws_iam_policy`; do terraform state mv $r module.dev.module.policy.$r; done
+    mv iamp.tf policy
+    for r in `terraform state list | grep '^aws_iam_policy\.'`; do terraform state mv $r module.policy.$r; done
     rm terraform.tfstate.*
     ```
 
-    1. create `dev/policy/output.tf`
+    1. create `policy/output.tf`
 
     ```
-    content=`terraform state list | grep ^module.dev.module.policy.aws_iam_policy | sed 's/module.dev.module.policy.\(.*\)/    \(\1.name\) = \1,/'`; echo "output\"policies\"{\nvalue = {\n$content\n}\n}" | terraform fmt - > dev/policy/output.tf
+    content=`terraform state list | grep '^module\.policy\.aws_iam_policy\.' | sed 's/module.policy.\(.*\)/    \(\1.name\) = \1,/'`; printf "output\"policies\"{\nvalue = {\n$content\n}\n}" | terraform fmt - > policy/output.tf
     ```
 
-    1. `dev/output.tf`
+    1. `output.tf`
 
     ```diff
-     output "dev" {
+     output "iam" {
        value = {
-         #group  = module.group.groups,
          policy = module.policy.policies,
-         #user   = module.user.users,
-         #role   = module.role.roles,
        }
      }
     ```
