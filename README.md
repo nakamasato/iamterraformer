@@ -337,6 +337,7 @@ No changes. Infrastructure is up-to-date.
     1. Create `policy_attachment.tf`
 
         ```
+        printf "module \"policy-attachment\"{\nsource=\"$POLICY_ATTACHMENT_MODULE_PATH\"\ngroup_policy_pairs=[\""
         ```
 
 ## Notice

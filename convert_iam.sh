@@ -4,6 +4,7 @@ set -ue
 
 FORCE=false
 GROUP_MODULE_PATH=../../tf/modules/iam/group
+POLICY_ATTACHMENT_MODULE_PATH=../tf/modules/iam/policy-attachment
 IMPORT_DIR=imported
 CONVERT_DIR=converted
 TF_COMMON=tf/common
@@ -137,6 +138,36 @@ echo "[convert] copy group/variables.tf done"
 echo "[convert] rm iamgm.tf"
 rm iamgm.tf
 echo "[convert] rm iamgm.tf done"
+
+##### IAM GROUP POLICY ATTACHMENT ########
+echo "[convert] iamgpa mv state"
+for a in `terraform state list | grep '^aws_iam_group_policy_attachment\.' | sed 's/aws_iam_group_policy_attachment\.//'`; do terraform state mv aws_iam_group_policy_attachment.$a module.policy-attachment.aws_iam_group_policy_attachment.attachment[\"$a\"]; done
+rm -f terraform.tfstate.*
+echo "[convert] iamgpa mv state done"
+
+tf=policy_attachment.tf; rm -rf $tf;
+echo "[convert] create $tf"
+printf "module \"policy-attachment\"{\nsource=\"$POLICY_ATTACHMENT_MODULE_PATH\"\ngroup_policy_pairs=[\n" >> $tf
+# AWS Managed Policy
+for a in `grep -B1 arn:aws:iam::aws:policy iamgpa.tf | grep aws_iam_group_policy_attachment | sed 's/.*aws_iam_group_policy_attachment" "\(.*\)".*/\1/'`; do
+    grep -A 2 $a iamgpa.tf | awk -F'\n' '{if(NR == 1) {printf $0} else {printf ","$0}}' | sed 's/.*aws_iam_group_policy_attachment" "\(.*\)".*policy_arn = .*"arn:aws:iam::aws:policy\/\(.*\)".*group.*= "\(.*\)"/{ \"group_name\" = module.group.groups[\"\3\"].name, policy_arn = \"arn:aws:iam::aws:policy\/\2\", name = \"\1\" },/' >> $tf
+done
+# Custom Policy
+for a in `grep -B1 -E 'arn:aws:iam::[0-9]+:policy' iamgpa.tf | grep aws_iam_group_policy_attachment | sed 's/.*aws_iam_group_policy_attachment" "\(.*\)".*/\1/'`; do
+    grep -A 2 $a iamgpa.tf | awk -F'\n' '{if(NR == 1) {printf $0} else {printf ","$0}}' |  sed 's/.*aws_iam_group_policy_attachment" "\(.*\)".*policy_arn = .*"arn:aws:iam::351540792571:policy\/\(.*\)".*group.* = "\(.*\)"/{ \"group_name\" = module.group.groups[\"\3\"].name, policy_arn = module.policy.policies[\"\2\"].arn, name = \"\1\" },/' >> $tf
+done
+printf "]\n" >> $tf
+# role policy pairs
+printf "role_policy_pairs = []\n" >> $tf
+# user policy pairs
+printf "user_policy_pairs = []\n" >> $tf
+printf "}\n" >> $tf
+terraform fmt $tf
+echo "[convert] create $tf done"
+
+echo "[convert] rm iamgpa.tf"
+rm iamgpa.tf
+echo "[convert] rm iamgpa.tf done"
 
 cp ../$TF_CONVERT/output.tf .
 
