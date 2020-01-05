@@ -5,6 +5,7 @@ set -ue
 FORCE=false
 REPLACE_DOLLAR_REGEX=s/\${aws:username}/\$\${aws:username}/g # not idempotent
 IMPORT_DIR=imported
+SRC_TF_DIR=tf/common
 while getopts 'f' c
 do
   case $c in
@@ -12,7 +13,7 @@ do
   esac
 done
 echo "[prepare] clean up"
-if $FORCE; then rm -f iam*.tf{,state}; fi
+if $FORCE; then rm -rf $IMPORT_DIR; fi
 echo "[prepare] install practice_terraforming"
 gem install practice_terraforming -v 0.1.10
 gem install terraforming -v 0.18.0
@@ -20,9 +21,8 @@ gem list terraforming
 
 echo "[prepare] make a directory"
 mkdir -p $IMPORT_DIR
-cp backend.tf provider.tf $IMPORT_DIR
+cp $SRC_TF_DIR/{provider,backend}.tf $IMPORT_DIR
 cd $IMPORT_DIR
-for env in dev; do for resource in role group user policy; do mkdir -p $env/$resource; done; done
 tree
 echo "[prepare] done"
 
@@ -62,5 +62,6 @@ rm -f $tfstate.bak
 echo "[terraform] consistency check"
 terraform init
 terraform plan > plan_result.txt
+tail plan_result.txt
 echo "[terraform] completed consistency check"
 
