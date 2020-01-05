@@ -115,14 +115,14 @@ No changes. Infrastructure is up-to-date.
 
 |imported state|destination|
 |---|---|
-|`aws_iam_user.<name>`|`module.dev.user.aws_iam_user.<user_name>`|
-|`aws_iam_group.<name>`|`module.dev.module.group.module.<group_name>.aws_iam_group.group`|
-|`aws_iam_role.<name>`|`module.dev.module.role.aws_iam_role.<role_name>`|
-|`aws_iam_policy.<name>`|`module.dev.module.policy.aws_iam_policy.<policy_name>`|
-|`aws_iam_group_membership.<name>`|`module.dev.module.group.module.<group_name>.aws_iam_group_membership.group_membership`|
-|`aws_iam_group_policy_attachment`|`module.dev.policy-attachment.aws_iam_group_policy_attachment.attachment["<group_name>-<policy_name>"]`|
-|`aws_iam_user_policy_attachment`|`module.dev.policy-attachment.aws_iam_user_policy_attachment.attachment["<user_name>-<policy_name>"]`|
-|`aws_iam_role_policy_attachment`|`module.dev.policy-attachment.aws_iam_role_policy_attachment.attachment["<role_name>-<policy_name>"]`|
+|`aws_iam_user.<name>`|`module.user.aws_iam_user.<user_name>`|
+|`aws_iam_group.<name>`|`module.group.module.<group_name>.aws_iam_group.group`|
+|`aws_iam_role.<name>`|`module.role.aws_iam_role.<role_name>`|
+|`aws_iam_policy.<name>`|`module.policy.aws_iam_policy.<policy_name>`|
+|`aws_iam_group_membership.<name>`|`module.group.module.<group_name>.aws_iam_group_membership.group_membership`|
+|`aws_iam_group_policy_attachment`|`module.policy-attachment.aws_iam_group_policy_attachment.attachment["<group_name>-<policy_name>"]`|
+|`aws_iam_user_policy_attachment`|`module.policy-attachment.aws_iam_user_policy_attachment.attachment["<user_name>-<policy_name>"]`|
+|`aws_iam_role_policy_attachment`|`module.policy-attachment.aws_iam_role_policy_attachment.attachment["<role_name>-<policy_name>"]`|
 
 
 1. Prepare `main.tf`, `output.tf`
@@ -131,207 +131,213 @@ No changes. Infrastructure is up-to-date.
 
     1. `main.tf`
 
-    ```
-    module "policy" {
-      source = "./policy"
-    }
-    ```
+        ```
+        module "policy" {
+          source = "./policy"
+        }
+        ```
 
     1. move state
-    ```
-    mv iamp.tf policy
-    for r in `terraform state list | grep '^aws_iam_policy\.'`; do terraform state mv $r module.policy.$r; done
-    rm -f terraform.tfstate.*
-    ```
+
+        ```
+        mv iamp.tf policy
+        for r in `terraform state list | grep '^aws_iam_policy\.'`; do terraform state mv $r module.policy.$r; done
+        rm -f terraform.tfstate.*
+        ```
 
     1. create `policy/output.tf`
 
-    ```
-    content=`terraform state list | grep '^module\.policy\.aws_iam_policy\.' | sed 's/module.policy.\(.*\)/    \(\1.name\) = \1,/'`; printf "output\"policies\"{\nvalue = {\n$content\n}\n}" | terraform fmt - > policy/output.tf
-    ```
+        ```
+        content=`terraform state list | grep '^module\.policy\.aws_iam_policy\.' | sed 's/module.policy.\(.*\)/    \(\1.name\) = \1,/'`; printf "output\"policies\"{\nvalue = {\n$content\n}\n}" | terraform fmt - > policy/output.tf
+        ```
 
     1. `output.tf`
 
-    ```diff
-     output "iam" {
-       value = {
-         policy = module.policy.policies,
-       }
-     }
-    ```
+        ```diff
+        output "iam" {
+          value = {
+            policy = module.policy.policies,
+          }
+        }
+        ```
 
     1. confirm
 
-    ```
-    terraform init
-    terraform plan -target=module.policy
-    ...
-    No changes. Infrastructure is up-to-date.
-    ```
+        ```
+        terraform init
+        terraform plan -target=module.policy
+        ...
+        No changes. Infrastructure is up-to-date.
+        ```
 
 1. move role
 
     1. `main.tf`
 
-    ```diff
-    + module "role" {
-    +   source = "./role"
-    + }
-    ```
+        ```diff
+        + module "role" {
+        +   source = "./role"
+        + }
+        ```
+
     1. move state
-    ```
-    mv iamr.tf role
-    for r in `terraform state list | grep ^aws_iam_role\.`; do terraform state mv $r module.dev.module.role.$r; done
-    rm -f terraform.tfstate.*
-    ```
+
+        ```
+        mv iamr.tf role
+        for r in `terraform state list | grep ^aws_iam_role\.`; do terraform state mv $r module.role.$r; done
+        rm -f terraform.tfstate.*
+        ```
 
     1. create `role/output.tf`
 
-    ```
-    content=`terraform state list | grep '^module\.dev\.module\.role\.aws_iam_role\.' | sed 's/module.dev.module.role.\(.*\)/    \(\1.name\) = \1,/'`; printf "output\"roles\"{\nvalue = {\n$content\n}\n}" | terraform fmt - > role/output.tf
-    ```
+        ```
+        content=`terraform state list | grep '^module\.role\.aws_iam_role\.' | sed 's/module.role.\(.*\)/    \(\1.name\) = \1,/'`; printf "output\"roles\"{\nvalue = {\n$content\n}\n}" | terraform fmt - > role/output.tf
+        ```
 
     1. `output.tf`
 
-    ```diff
-     output "iam" {
-       value = {
-         policy = module.policy.policies,
-    +    role   = module.role.roles,
-       }
-     }
-    ```
+        ```diff
+         output "iam" {
+           value = {
+             policy = module.policy.policies,
+        +    role   = module.role.roles,
+           }
+         }
+        ```
 
     1. confirm
-    ```
-    terraform init
-    terraform plan -target=module.role
-    ...
-    No changes. Infrastructure is up-to-date.
-    ```
+
+        ```
+        terraform init
+        terraform plan -target=module.role
+        ...
+        No changes. Infrastructure is up-to-date.
+        ```
 
 1. move user
 
     1. `main.tf`
 
-    ```diff
-    + module "user" {
-    +   source = "./user"
-    + }
-    ```
+        ```diff
+        + module "user" {
+        +   source = "./user"
+        + }
+        ```
 
     1. move state
 
-    ```
-    mv iamu.tf user
-    for r in `terraform state list | grep '^aws_iam_user\.'`; do terraform state mv $r module.user.$r; done
-    rm terraform.tfstate.*
-    ```
+        ```
+        mv iamu.tf user
+        for r in `terraform state list | grep '^aws_iam_user\.'`; do terraform state mv $r module.user.$r; done
+        rm terraform.tfstate.*
+        ```
 
     1. create `user/output.tf`
 
-    ```
-    content=`terraform state list | grep '^module\.user\.aws_iam_user\.' | sed 's/module.user.\(.*\)/    \(\1.name\) = \1,/'`; printf "output\"users\"{\nvalue = {\n$content\n}\n}" | terraform fmt - > user/output.tf
-    ```
+        ```
+        content=`terraform state list | grep '^module\.user\.aws_iam_user\.' | sed 's/module.user.\(.*\)/    \(\1.name\) = \1,/'`; printf "output\"users\"{\nvalue = {\n$content\n}\n}" | terraform fmt - > user/output.tf
+        ```
 
     1. `output.tf`
 
-    ```diff
-     output "iam" {
-       value = {
-         policy = module.policy.policies,
-         role   = module.role.roles,
-    +    user   = module.user.users,
-       }
-     }
-    ```
+        ```diff
+         output "iam" {
+           value = {
+             policy = module.policy.policies,
+             role   = module.role.roles,
+        +    user   = module.user.users,
+           }
+         }
+        ```
 
     1. confirm
 
-    ```
-    terraform init
-    terraform plan -target=module.user
-    ...
-    No changes. Infrastructure is up-to-date.
-    ```
+        ```
+        terraform init
+        terraform plan -target=module.user
+        ...
+        No changes. Infrastructure is up-to-date.
+        ```
 
 1. move group
 
     1. move state
 
-    ```
-    rm iamg.tf
-    for g in `terraform state list | grep '^aws_iam_group\.' | sed 's/aws_iam_group\.\(.*\)/\1/'`; do terraform state mv aws_iam_group.$g module.group.module.$g.aws_iam_group.group; done
-    rm -f terraform.tfstate.*
-    ```
+        ```
+        rm iamg.tf
+        for g in `terraform state list | grep '^aws_iam_group\.' | sed 's/aws_iam_group\.\(.*\)/\1/'`; do terraform state mv aws_iam_group.$g module.group.module.$g.aws_iam_group.group; done
+        rm -f terraform.tfstate.*
+        ```
 
     1. create `group/main.tf`
 
-    ```
-    GROUP_MODULE_PATH=../../tf/modules/iam/group
-    tf=group/main.tf; rm -f $tf; for g in `terraform state list | grep 'aws_iam_group\.' | sed 's/.*aws_iam_group\.\(.*\)/\1/'`; do printf "module\"$g\"{\nsource=\"$GROUP_MODULE_PATH\"\ngroup_name=\"$g\"\nuser_name_list=var.group_members[\"$g\"]\n}\n" >> $tf; done; terraform fmt $tf
-    ```
+        ```
+        GROUP_MODULE_PATH=../../tf/modules/iam/group
+        tf=group/main.tf; rm -f $tf; for g in `terraform state list | grep 'aws_iam_group\.' | sed 's/.*aws_iam_group\.\(.*\)/\1/'`; do printf "module\"$g\"{\nsource=\"$GROUP_MODULE_PATH\"\ngroup_name=\"$g\"\nuser_name_list=var.group_members[\"$g\"]\n}\n" >> $tf; done; terraform fmt $tf
+        ```
 
     1. create `group/output.tf`
-    ```
-    content=`terraform state list | grep '^module\.group\.aws_iam_group\.' | sed 's/module.group.aws_iam_group.\(.*\)/    "\1" = module.\1.group,/'`; printf "output\"groups\"{\nvalue = {\n$content\n}\n}" | terraform fmt - > group/output.tf
-    ```
+
+        ```
+        content=`terraform state list | grep '^module\.group\.aws_iam_group\.' | sed 's/module.group.aws_iam_group.\(.*\)/    "\1" = module.\1.group,/'`; printf "output\"groups\"{\nvalue = {\n$content\n}\n}" | terraform fmt - > group/output.tf
+        ```
 
     1. `output.tf`
 
-    ```diff
-     output "dev" {
-       value = {
-         policy = module.policy.policies,
-         user   = module.user.users,
-         role   = module.role.roles,
-    +    group  = module.group.groups,
-       }
-     }
-    ```
+        ```diff
+         output "iam" {
+           value = {
+             policy = module.policy.policies,
+             user   = module.user.users,
+             role   = module.role.roles,
+        +    group  = module.group.groups,
+           }
+         }
+        ```
 
     1. move group membership
 
-    ```
-    for g in `terraform state list | grep '^aws_iam_group_membership\.' | sed 's/aws_iam_group_membership.\(.*\)/\1/'`; do terraform state mv aws_iam_group_membership.$g module.dev.module.group.module.$g.aws_iam_group_membership.group_membership; done
-    rm terraform.tfstate.*
-    ```
+        ```
+        for g in `terraform state list | grep '^aws_iam_group_membership\.' | sed 's/aws_iam_group_membership.\(.*\)/\1/'`; do terraform state mv aws_iam_group_membership.$g module.group.module.$g.aws_iam_group_membership.group_membership; done
+        rm terraform.tfstate.*
+        ```
 
     1. write the membership in `main.tf` <- Very wasteful
 
-    ```
-    tf=group_membership.tf; rm -f $tf; printf "module\"group\"{\nsource = \"./group\"\ngroup_members = {" >> $tf; for g in `grep aws_iam_group_membership iamgm.tf | sed 's/.*aws_iam_group_membership" "\(.*\)".*/\1/'`; do user_str=`grep -A 2 -e "aws_iam_group_membership\" \"$g\"" iamgm.tf | grep users | sed -e 's/.*users = \[\([^]]*\)\]/\1/' -e 's/\"//g' -e 's/,//g'`; printf "\"$g\"=[" >>$tf; for u in `printf "$user_str"`; do printf "module.user.users[\"$u\"].name," >> $tf; done; printf "]," >> $tf; done; printf "}\n}" >> $tf; terraform fmt $tf
-    ```
+        ```
+        tf=group_membership.tf; rm -f $tf; printf "module\"group\"{\nsource = \"./group\"\ngroup_members = {" >> $tf; for g in `grep aws_iam_group_membership iamgm.tf | sed 's/.*aws_iam_group_membership" "\(.*\)".*/\1/'`; do user_str=`grep -A 2 -e "aws_iam_group_membership\" \"$g\"" iamgm.tf | grep users | sed -e 's/.*users = \[\([^]]*\)\]/\1/' -e 's/\"//g' -e 's/,//g'`; printf "\"$g\"=[" >>$tf; for u in `printf "$user_str"`; do printf "module.user.users[\"$u\"].name," >> $tf; done; printf "]," >> $tf; done; printf "}\n}" >> $tf; terraform fmt $tf
+        ```
 
     1. `group/variables.tf`
 
-    ```
-    variable "group_members" {
-      description = "group name to list of users"
-      type        = map
-    }
-    ```
+        ```
+        variable "group_members" {
+        description = "group name to list of users"
+        type        = map
+        }
+        ```
 
     1. rm `iamgm.tf`
 
-    ```
-    rm iamgm.tf
-    ```
+        ```
+        rm iamgm.tf
+        ```
 
     1. confirm
-    ```
-    terraform init
-    terraform plan
-    ...
-    No changes. Infrastructure is up-to-date.
-    ```
+
+        ```
+        terraform init
+        terraform plan
+        ...
+        No changes. Infrastructure is up-to-date.
+        ```
 
 1. move iamgpa (Not implemented)
 
-    1. Create `dev/policy_attachment.tf`
+    1. Create `policy_attachment.tf`
 
-    ```
-    ```
+        ```
+        ```
 
 ## Notice
 
@@ -352,4 +358,3 @@ No changes. Infrastructure is up-to-date.
 - aws_iam_user_policy
 - aws_iam_role_policy
 - aws_iam_group_policy
-
