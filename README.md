@@ -148,47 +148,48 @@ No changes. Infrastructure is up-to-date.
 
 1. move user
 
+    1. `main.tf`
+
+    ```diff
+    + module "user" {
+    +   source = "./user"
+    + }
+    ```
+
     1. move state
 
     ```
-    mv iamu.tf dev/user
-    for r in `terraform state list | grep '^aws_iam_user\.'`; do terraform state mv $r module.dev.module.user.$r; done
+    mv iamu.tf user
+    for r in `terraform state list | grep '^aws_iam_user\.'`; do terraform state mv $r module.user.$r; done
     rm terraform.tfstate.*
     ```
 
-    1. create `dev/user/output.tf`
+    1. create `user/output.tf`
+
     ```
-    content=`terraform state list | grep '^module\.dev\.module\.user\.aws_iam_user\.' | sed 's/module.dev.module.user.\(.*\)/    \(\1.name\) = \1,/'`; echo "output\"users\"{\nvalue = {\n$content\n}\n}" | terraform fmt - > dev/user/output.tf
+    content=`terraform state list | grep '^module\.user\.aws_iam_user\.' | sed 's/module.user.\(.*\)/    \(\1.name\) = \1,/'`; printf "output\"users\"{\nvalue = {\n$content\n}\n}" | terraform fmt - > user/output.tf
     ```
 
-    1. `dev/output.tf`
+    1. `output.tf`
 
     ```diff
-     output "dev" {
+     output "iam" {
        value = {
-         #group  = module.group.groups,
          policy = module.policy.policies,
-    +     user   = module.user.users,
+    +    user   = module.user.users,
          role   = module.role.roles,
        }
      }
     ```
 
-    1. add the following to `dev/main.tf`
-
-    ```
-    module "user" {
-      source = "./user"
-    }
-    ```
-
     1. confirm
+
     ```
     terraform init
-    terraform plan
+    terraform plan -target=module.user
     ...
     No changes. Infrastructure is up-to-date.
-    users
+    ```
 
 1. move group
 

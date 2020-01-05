@@ -75,6 +75,24 @@ printf "output\"roles\"{\nvalue = {\n$content\n}\n}" | terraform fmt - > role/ou
 echo "[convert] iamr create role/output.tf done"
 echo "[convert] iamr done"
 
+###### IAM USER #########
+echo "[convert] iamu mv tf"
+if [ -f iamu.tf ]; then
+    mv iamu.tf user
+fi
+echo "[convert] iamu mv tf done"
+
+echo "[convert] iamu mv state"
+for r in `terraform state list | grep '^aws_iam_user\.'`; do terraform state mv $r module.user.$r; done
+rm -f terraform.tfstate.*.backup
+echo "[convert] iamu mv state done"
+
+echo "[convert] iamu create user/output.tf"
+content=`terraform state list | grep '^module\.user\.aws_iam_user\.' | sed 's/module.user.\(.*\)/    \(\1.name\) = \1,/'`;
+printf "output\"users\"{\nvalue = {\n$content\n}\n}" | terraform fmt - > user/output.tf
+echo "[convert] iamu create user/output.tf done"
+echo "[convert] iamu done"
+
 cp ../$TF_CONVERT/output.tf .
 
 terraform plan
