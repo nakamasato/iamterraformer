@@ -85,12 +85,11 @@ https://github.com/hashicorp/terraform/blob/master/terraform/eval_for_each.go#L2
     ├── role
     │   ├── iamr.tf
     │   └── output.tf
-    ├── terraform.tfstate
     └── user
         ├── iamu.tf
         └── output.tf
 
-    4 directories, 19 files
+    4 directories, 18 files
     ```
 
 ## Import the existing resources into the module
