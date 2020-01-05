@@ -37,7 +37,7 @@ for resource in iamp iamu iamg iamgm iamr iamupa iamgpa iamrpa; do
         terraforming=practice_terraforming
     fi
     if [ -f $tf ];then
-        echo "[import] already imported ($tf and $tf)"
+        echo "[import] already imported ($tf)"
     else
         echo "[import] $resource"
         SECONDS=0
@@ -60,7 +60,7 @@ sed -i.bak $REPLACE_DOLLAR_REGEX $tfstate
 rm -f $tfstate.bak
 
 echo "[terraform] fmt"
-terraform fmt $IMPORT_DIR
+terraform fmt
 
 echo "[terraform] consistency check"
 terraform init

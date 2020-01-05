@@ -31,7 +31,7 @@ https://github.com/hashicorp/terraform/blob/master/terraform/eval_for_each.go#L2
 1. Import the existing resourcs.
 
     ```
-    ./import_iam.sh
+    ./import.sh
     ```
 
     it will generate the following files in `imported` directory.
@@ -58,7 +58,7 @@ https://github.com/hashicorp/terraform/blob/master/terraform/eval_for_each.go#L2
 1. Convert the imported tf resources into the designed module.
 
     ```
-    ./convert_iam.sh
+    ./convert.sh
     ```
 
     it will generate the following files in `converted` directory.
@@ -72,10 +72,8 @@ https://github.com/hashicorp/terraform/blob/master/terraform/eval_for_each.go#L2
     │   ├── output.tf
     │   └── variables.tf
     ├── group_membership.tf
+    ├── group_policy_attachment.tf
     ├── iam.tfstate
-    ├── iamgpa.tf
-    ├── iamrpa.tf
-    ├── iamupa.tf
     ├── main.tf
     ├── output.tf
     ├── policy
@@ -85,11 +83,11 @@ https://github.com/hashicorp/terraform/blob/master/terraform/eval_for_each.go#L2
     ├── role
     │   ├── iamr.tf
     │   └── output.tf
-    └── user
-        ├── iamu.tf
-        └── output.tf
-
-    4 directories, 18 files
+    ├── role_policy_attachment.tf
+    ├── user
+    │   ├── iamu.tf
+    │   └── output.tf
+    └── user_policy_attachment.tf
     ```
 
 ## Import the existing resources into the module
@@ -97,12 +95,12 @@ https://github.com/hashicorp/terraform/blob/master/terraform/eval_for_each.go#L2
 ### 1. Import the resources
 
 ```
-./import_iam.sh [-f]
+./import.sh [-f]
 ```
 
 1. Import `tf` and `tfstate` for existing resources
-    - `terrafroming`: `iamu` (`tags` is not including), `iamp`, `iamg`, `iamgm`
-    - `practice_terraforming`: `iamr` (`description` is not included in `terraforming`), `iamgpa`, `iamrpa`, `iamupa` (not implemented in `terraforming`)
+    - `terrafroming`: `iamp`, `iamg`, `iamgm`
+    - `practice_terraforming`: `iamu` (`tags` is not included in `terraforming`), `iamr` (`description` is not included in `terraforming`), `iamgpa`, `iamrpa`, `iamupa` (not implemented in `terraforming`)
 1. Replace `${aws:username}` with `$${aws:username}`
 
 1. `terraform init` with local backend and `terraform plan` to check the imported tfstate and tf files are consistent
@@ -332,13 +330,23 @@ No changes. Infrastructure is up-to-date.
         No changes. Infrastructure is up-to-date.
         ```
 
-1. move iamgpa (Not implemented)
+1. move iamgpa
 
-    1. Create `policy_attachment.tf`
+    1. Move state from `iam_group_policy_attachment` to `module.group-policy-attachment.aws_iam_group_policy_attachment.attachment["<group_name>-<policy_name>"]`
+    1. Create `group_policy_attachment.tf`
+    1. Remove `iamgpa.tf`
 
-        ```
-        printf "module \"policy-attachment\"{\nsource=\"$POLICY_ATTACHMENT_MODULE_PATH\"\ngroup_policy_pairs=[\""
-        ```
+1. move iamrpa
+
+    1. Move state from `iam_role_policy_attachment` to `module.role-policy-attachment.aws_iam_role_policy_attachment.attachment["<role_name>-<policy_name>"]`
+    1. Craete `role_policy_attachment.tf`
+    1. Remove `iamrpa.tf`
+
+1. move iamupa
+
+    1. Move state from `iam_user_policy_attachment` to `module.user-policy-attachment.aws_iam_user_policy_attachment.attachment["<user_name>-<policy_name>"]`
+    1. Craete `user_policy_attachment.tf`
+    1. Remove `iamupa.tf`
 
 ## Notice
 
