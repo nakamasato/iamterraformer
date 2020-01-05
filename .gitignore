@@ -1,4 +1,5 @@
 .terraform
+imported
 plan_result.txt
 iam.tfstate
 iamg.tf

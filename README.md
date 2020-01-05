@@ -1,7 +1,11 @@
 # IAM Resouces
 
-## UML
+## Prerequisite
 
+Terraform 0.12.18
+Ruby 2.x
+
+## UML
 
 ![sequence dialog](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/nakamasato/iamterraformer/develop/uml/iam_resource_uml.txt)
 
