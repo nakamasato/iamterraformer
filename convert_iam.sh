@@ -4,7 +4,10 @@ set -ue
 
 FORCE=false
 GROUP_MODULE_PATH=../../tf/modules/iam/group
-POLICY_ATTACHMENT_MODULE_PATH=../tf/modules/iam/policy-attachment
+GROUP_POLICY_ATTACHMENT_MODULE_PATH=../tf/modules/iam/group-policy-attachment
+USER_POLICY_ATTACHMENT_MODULE_PATH=../tf/modules/iam/user-policy-attachment
+ROLE_POLICY_ATTACHMENT_MODULE_PATH=../tf/modules/iam/role-policy-attachment
+
 IMPORT_DIR=imported
 CONVERT_DIR=converted
 TF_COMMON=tf/common
@@ -25,6 +28,9 @@ fi
 
 echo "[convert] copy"
 rm -f $CONVERT_DIR/output.tf
+rm -f $CONVERT_DIR/group_policy_attachment.tf
+rm -f $CONVERT_DIR/role_policy_attachment.tf
+rm -f $CONVERT_DIR/user_policy_attachment.tf
 cp $IMPORT_DIR/*tf $CONVERT_DIR
 cp $TF_CONVERT/main.tf $CONVERT_DIR
 cd $CONVERT_DIR
@@ -140,34 +146,89 @@ rm iamgm.tf
 echo "[convert] rm iamgm.tf done"
 
 ##### IAM GROUP POLICY ATTACHMENT ########
-echo "[convert] iamgpa mv state"
-for a in `terraform state list | grep '^aws_iam_group_policy_attachment\.' | sed 's/aws_iam_group_policy_attachment\.//'`; do terraform state mv aws_iam_group_policy_attachment.$a module.policy-attachment.aws_iam_group_policy_attachment.attachment[\"$a\"]; done
+resource=iamgpa
+echo "[convert] $resource mv state"
+for a in `terraform state list | grep '^aws_iam_group_policy_attachment\.' | sed 's/aws_iam_group_policy_attachment\.//'`; do terraform state mv aws_iam_group_policy_attachment.$a module.group-policy-attachment.aws_iam_group_policy_attachment.attachment[\"$a\"]; done
 rm -f terraform.tfstate.*
-echo "[convert] iamgpa mv state done"
+echo "[convert] $resource mv state done"
 
-tf=policy_attachment.tf; rm -rf $tf;
+tf=group_policy_attachment.tf; rm -rf $tf;
 echo "[convert] create $tf"
-printf "module \"policy-attachment\"{\nsource=\"$POLICY_ATTACHMENT_MODULE_PATH\"\ngroup_policy_pairs=[\n" >> $tf
+printf "module \"group-policy-attachment\"{\nsource=\"$GROUP_POLICY_ATTACHMENT_MODULE_PATH\"\ngroup_policy_pairs=[\n" >> $tf
 # AWS Managed Policy
-for a in `grep -B1 arn:aws:iam::aws:policy iamgpa.tf | grep aws_iam_group_policy_attachment | sed 's/.*aws_iam_group_policy_attachment" "\(.*\)".*/\1/'`; do
-    grep -A 2 $a iamgpa.tf | awk -F'\n' '{if(NR == 1) {printf $0} else {printf ","$0}}' | sed 's/.*aws_iam_group_policy_attachment" "\(.*\)".*policy_arn = .*"arn:aws:iam::aws:policy\/\(.*\)".*group.*= "\(.*\)"/{ \"group_name\" = module.group.groups[\"\3\"].name, policy_arn = \"arn:aws:iam::aws:policy\/\2\", name = \"\1\" },/' >> $tf
+for a in `grep -B1 arn:aws:iam::aws:policy $resource.tf | grep aws_iam_group_policy_attachment | sed 's/.*aws_iam_group_policy_attachment" "\(.*\)".*/\1/'`; do
+    grep -A 2 $a $resource.tf | awk -F'\n' '{if(NR == 1) {printf $0} else {printf ","$0}}' | sed 's/.*aws_iam_group_policy_attachment" "\(.*\)".*policy_arn = "\(.*\)".*group.*= "\(.*\)"/{ \"group_name\" = module.group.groups[\"\3\"].name, policy_arn = \"\2\", name = \"\1\" },/' >> $tf
 done
 # Custom Policy
-for a in `grep -B1 -E 'arn:aws:iam::[0-9]+:policy' iamgpa.tf | grep aws_iam_group_policy_attachment | sed 's/.*aws_iam_group_policy_attachment" "\(.*\)".*/\1/'`; do
-    grep -A 2 $a iamgpa.tf | awk -F'\n' '{if(NR == 1) {printf $0} else {printf ","$0}}' |  sed 's/.*aws_iam_group_policy_attachment" "\(.*\)".*policy_arn = .*"arn:aws:iam::351540792571:policy\/\(.*\)".*group.* = "\(.*\)"/{ \"group_name\" = module.group.groups[\"\3\"].name, policy_arn = module.policy.policies[\"\2\"].arn, name = \"\1\" },/' >> $tf
+for a in `grep -B1 -E 'arn:aws:iam::[0-9]+:policy' $resource.tf | grep aws_iam_group_policy_attachment | sed 's/.*aws_iam_group_policy_attachment" "\(.*\)".*/\1/'`; do
+    grep -A 2 $a $resource.tf | awk -F'\n' '{if(NR == 1) {printf $0} else {printf ","$0}}' |  sed 's/.*aws_iam_group_policy_attachment" "\(.*\)".*policy_arn = .*"arn:aws:iam::.*:policy.*\/\(.*\)".*group.* = "\(.*\)"/{ \"group_name\" = module.group.groups[\"\3\"].name, policy_arn = module.policy.policies[\"\2\"].arn, name = \"\1\" },/' >> $tf
 done
 printf "]\n" >> $tf
-# role policy pairs
-printf "role_policy_pairs = []\n" >> $tf
-# user policy pairs
-printf "user_policy_pairs = []\n" >> $tf
 printf "}\n" >> $tf
 terraform fmt $tf
 echo "[convert] create $tf done"
 
-echo "[convert] rm iamgpa.tf"
-rm iamgpa.tf
-echo "[convert] rm iamgpa.tf done"
+echo "[convert] rm $resource.tf"
+rm $resource.tf
+echo "[convert] rm $resource.tf done"
+
+##### IAM ROLE POLICY ATTACHMENT ########
+resource=iamrpa
+echo "[convert] $resource mv state"
+for a in `terraform state list | grep '^aws_iam_role_policy_attachment\.' | sed 's/aws_iam_role_policy_attachment\.//'`; do
+    terraform state mv aws_iam_role_policy_attachment.$a module.role-policy-attachment.aws_iam_role_policy_attachment.attachment[\"$a\"]
+done
+rm -f terraform.tfstate.*
+echo "[convert] $resource mv state done"
+
+tf=role_policy_attachment.tf; rm -rf $tf;
+echo "[convert] create $tf"
+printf "module \"role-policy-attachment\"{\nsource=\"$ROLE_POLICY_ATTACHMENT_MODULE_PATH\"\nrole_policy_pairs=[\n" >> $tf
+# AWS Managed Policy
+for a in `grep -B1 arn:aws:iam::aws:policy $resource.tf | grep aws_iam_role_policy_attachment | sed 's/.*aws_iam_role_policy_attachment" "\(.*\)".*/\1/'`; do
+    grep -A 2 $a $resource.tf | awk -F'\n' '{if(NR == 1) {printf $0} else {printf ","$0}}' | sed 's/.*aws_iam_role_policy_attachment" "\(.*\)".*policy_arn = "\(.*\)".*role.*= "\(.*\)"/{ \"role_name\" = module.role.roles[\"\3\"].name, policy_arn = \"\2\", name = \"\1\" },/' >> $tf
+done
+# Custom Policy
+for a in `grep -B1 -E 'arn:aws:iam::[0-9]+:policy' $resource.tf | grep aws_iam_role_policy_attachment | sed 's/.*aws_iam_role_policy_attachment" "\(.*\)".*/\1/'`; do
+    grep -A 2 $a $resource.tf | awk -F'\n' '{if(NR == 1) {printf $0} else {printf ","$0}}' |  sed 's/.*aws_iam_role_policy_attachment" "\(.*\)".*policy_arn = .*"arn:aws:iam::.*:policy.*\/\(.*\)".*role.* = "\(.*\)"/{ \"role_name\" = module.role.roles[\"\3\"].name, policy_arn = module.policy.policies[\"\2\"].arn, name = \"\1\" },/' >> $tf
+done
+printf "]\n" >> $tf
+printf "}\n" >> $tf
+terraform fmt $tf
+echo "[convert] create $tf done"
+
+echo "[convert] rm $resource.tf"
+rm $resource.tf
+echo "[convert] rm $resource.tf done"
+
+##### IAM USER POLICY ATTACHMENT ########
+resource=iamupa
+echo "[convert] $resource mv state"
+for a in `terraform state list | grep '^aws_iam_user_policy_attachment\.' | sed 's/aws_iam_user_policy_attachment\.//'`; do
+    terraform state mv aws_iam_user_policy_attachment.$a module.user-policy-attachment.aws_iam_user_policy_attachment.attachment[\"$a\"]
+done
+rm -f terraform.tfstate.*
+echo "[convert] $resource mv state done"
+
+tf=user_policy_attachment.tf; rm -rf $tf;
+echo "[convert] create $tf"
+printf "module \"user-policy-attachment\"{\nsource=\"$USER_POLICY_ATTACHMENT_MODULE_PATH\"\nuser_policy_pairs=[\n" >> $tf
+# AWS Managed Policy
+for a in `grep -B1 arn:aws:iam::aws:policy $resource.tf | grep aws_iam_user_policy_attachment | sed 's/.*aws_iam_user_policy_attachment" "\(.*\)".*/\1/'`; do
+    grep -A 2 $a $resource.tf | awk -F'\n' '{if(NR == 1) {printf $0} else {printf ","$0}}' | sed 's/.*aws_iam_user_policy_attachment" "\(.*\)".*policy_arn = "\(.*\)".*user.*= "\(.*\)"/{ \"user_name\" = module.user.users[\"\3\"].name, policy_arn = \"\2\", name = \"\1\" },/' >> $tf
+done
+# Custom Policy
+for a in `grep -B1 -E 'arn:aws:iam::[0-9]+:policy' $resource.tf | grep aws_iam_user_policy_attachment | sed 's/.*aws_iam_user_policy_attachment" "\(.*\)".*/\1/'`; do
+    grep -A 2 $a $resource.tf | awk -F'\n' '{if(NR == 1) {printf $0} else {printf ","$0}}' |  sed 's/.*aws_iam_user_policy_attachment" "\(.*\)".*policy_arn = .*"arn:aws:iam::.*:policy.*\/\(.*\)".*user.* = "\(.*\)"/{ \"user_name\" = module.user.users[\"\3\"].name, policy_arn = module.policy.policies[\"\2\"].arn, name = \"\1\" },/' >> $tf
+done
+printf "]\n" >> $tf
+printf "}\n" >> $tf
+terraform fmt $tf
+echo "[convert] create $tf done"
+
+echo "[convert] rm $resource.tf"
+rm $resource.tf
+echo "[convert] rm $resource.tf done"
 
 cp ../$TF_CONVERT/output.tf .
 
