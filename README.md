@@ -3,9 +3,8 @@
 ## UML
 
 
-```plantuml
+![sequence dialog](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/nakamasato/iamterraformer/develop/uml/iam_resource_uml.txt)
 
-```
 
 ## Module Design
 
