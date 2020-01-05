@@ -12,6 +12,7 @@ IMPORT_DIR=imported
 CONVERT_DIR=converted
 TF_COMMON=tf/common
 TF_CONVERT=tf/convert
+TF_STATE=iam.tfstate
 
 while getopts 'f' c
 do
@@ -22,10 +23,11 @@ done
 
 if $FORCE; then
    rm -rf $CONVERT_DIR
-   mkdir -p $CONVERT_DIR
-   cp $IMPORT_DIR/iam.tfstate $CONVERT_DIR
 fi
-
+mkdir -p $CONVERT_DIR
+if [ ! -f $TF_STATE -o $FORCE ]; then
+    cp $IMPORT_DIR/$TF_STATE $CONVERT_DIR
+fi
 echo "[convert] copy"
 rm -f $CONVERT_DIR/output.tf
 rm -f $CONVERT_DIR/group_policy_attachment.tf
