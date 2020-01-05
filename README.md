@@ -46,7 +46,7 @@ No changes. Infrastructure is up-to-date.
 ### 2. Convert into the resources with designed module
 
 |imported state|destination|
-|---|---|---|
+|---|---|
 |`aws_iam_user.<name>`|`module.dev.user.aws_iam_user.<user_name>`|
 |`aws_iam_group.<name>`|`module.dev.module.group.module.<group_name>.aws_iam_group.group`|
 |`aws_iam_role.<name>`|`module.dev.module.role.aws_iam_role.<role_name>`|
