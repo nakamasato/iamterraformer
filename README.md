@@ -120,9 +120,9 @@ No changes. Infrastructure is up-to-date.
 |`aws_iam_role.<name>`|`module.role.aws_iam_role.<role_name>`|
 |`aws_iam_policy.<name>`|`module.policy.aws_iam_policy.<policy_name>`|
 |`aws_iam_group_membership.<name>`|`module.group.module.<group_name>.aws_iam_group_membership.group_membership`|
-|`aws_iam_group_policy_attachment`|`module.policy-attachment.aws_iam_group_policy_attachment.attachment["<group_name>-<policy_name>"]`|
-|`aws_iam_user_policy_attachment`|`module.policy-attachment.aws_iam_user_policy_attachment.attachment["<user_name>-<policy_name>"]`|
-|`aws_iam_role_policy_attachment`|`module.policy-attachment.aws_iam_role_policy_attachment.attachment["<role_name>-<policy_name>"]`|
+|`aws_iam_group_policy_attachment`|`module.group-policy-attachment.aws_iam_group_policy_attachment.attachment["<group_name>-<policy_name>"]`|
+|`aws_iam_user_policy_attachment`|`module.user-policy-attachment.aws_iam_user_policy_attachment.attachment["<user_name>-<policy_name>"]`|
+|`aws_iam_role_policy_attachment`|`module.role-policy-attachment.aws_iam_role_policy_attachment.attachment["<role_name>-<policy_name>"]`|
 
 
 1. Prepare `main.tf`, `output.tf`
