@@ -140,4 +140,5 @@ echo "[convert] rm iamgm.tf done"
 
 cp ../$TF_CONVERT/output.tf .
 
+terraform init
 terraform plan
