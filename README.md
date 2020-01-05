@@ -29,7 +29,7 @@ https://github.com/hashicorp/terraform/blob/master/terraform/eval_for_each.go#L2
 ### 1. Import the resources
 
 ```
-./import_script.sh [-f]
+./import_iam.sh [-f]
 ```
 
 1. Import `tf` and `tfstate` for existing resources
