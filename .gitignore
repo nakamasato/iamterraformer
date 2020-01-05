@@ -1,2 +1,11 @@
 .terraform
 plan_result.txt
+iam.tfstate
+iamg.tf
+iamgpa.tf
+iamgm.tf
+iamp.tf
+iamr.tf
+iamrpa.tf
+iamu.tf
+iamupa.tf
