@@ -59,6 +59,9 @@ done
 sed -i.bak $REPLACE_DOLLAR_REGEX $tfstate
 rm -f $tfstate.bak
 
+echo "[terraform] fmt"
+terraform fmt $IMPORT_DIR
+
 echo "[terraform] consistency check"
 terraform init
 terraform plan > plan_result.txt

@@ -1,8 +1,8 @@
 output "iam" {
   value = {
     policy = module.policy.policies,
-    role = module.role.roles,
-    user = module.user.users,
+    role   = module.role.roles,
+    user   = module.user.users,
     group  = module.group.groups,
   }
 }
