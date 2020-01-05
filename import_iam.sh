@@ -3,8 +3,8 @@
 set -ue
 
 FORCE=false
-# REPLACE_DOLLAR_REGEX=s/[^$][$]{aws:username}/\1\$\${aws:username}/g
 REPLACE_DOLLAR_REGEX=s/\${aws:username}/\$\${aws:username}/g # not idempotent
+IMPORT_DIR=imported
 while getopts 'f' c
 do
   case $c in
@@ -19,6 +19,9 @@ gem install terraforming -v 0.18.0
 gem list terraforming
 
 echo "[prepare] make a directory"
+mkdir -p $IMPORT_DIR
+cp backend.tf provider.tf $IMPORT_DIR
+cd $IMPORT_DIR
 for env in dev; do for resource in role group user policy; do mkdir -p $env/$resource; done; done
 tree
 echo "[prepare] done"
