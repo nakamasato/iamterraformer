@@ -15,7 +15,7 @@ done
 echo "[prepare] clean up"
 if $FORCE; then rm -rf $IMPORT_DIR; fi
 echo "[prepare] install practice_terraforming"
-gem install practice_terraforming -v 0.1.10
+gem install practice_terraforming -v 0.1.11
 gem install terraforming -v 0.18.0
 gem list terraforming
 
