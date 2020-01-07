@@ -51,7 +51,7 @@ terraform init
 ###### IAM POLICY #########
 echo "[convert] iamp mv tf"
 if [ -f iamp.tf ]; then
-    mv iamp.tf policy
+    mv iamp.tf policy/main.tf
 fi
 echo "[convert] iamp mv tf done"
 
@@ -70,7 +70,7 @@ echo "[convert] iamp done"
 ###### IAM ROLE #########
 echo "[convert] iamr mv tf"
 if [ -f iamr.tf ]; then
-    mv iamr.tf role
+    mv iamr.tf role/main.tf
 fi
 echo "[convert] iamr mv tf done"
 
@@ -88,7 +88,7 @@ echo "[convert] iamr done"
 ###### IAM USER #########
 echo "[convert] iamu mv tf"
 if [ -f iamu.tf ]; then
-    mv iamu.tf user
+    mv iamu.tf user/main.tf
 fi
 echo "[convert] iamu mv tf done"
 
