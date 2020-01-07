@@ -9,3 +9,7 @@ module "role" {
 module "user" {
   source = "./user"
 }
+
+module "group" {
+  source = "./group"
+}
