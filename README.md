@@ -7,84 +7,8 @@ Ruby 2.x
 
 ## UML
 
-![sequence dialog](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/nakamasato/iamterraformer/master/uml/iam_resource_uml.txt)
+![sequence dialog](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/nakamasato/iamterraformer/update-uml-converter/uml/iam_resource_uml.txt)
 
-
-```puml
-@startuml
-
-entity "aws_iam_policy" {
-    + name (Optional, Forces new resource)
-    ==
-    * description  (Optional, Forces new resource)
-    * name_prefix
-    * policy (required)
-    * path
-}
-
-entity "aws_iam_group" {
-    + name (Required)
-    ==
-    * path
-}
-
-entity "aws_iam_user" {
-    + name  (Optional, Forces new resource)
-    ==
-    * path
-    * permissions_boundary
-    * force_destroy
-    * tags
-}
-
-entity "aws_iam_role" {
-    + name  (Optional, Forces new resource)
-    ==
-    * name_prefix
-    * assume_role_policy (Required)
-    * force_detach_policies
-    * path
-    * description
-    * max_session_duration
-    * permissions_boundary
-    * tags
-}
-
-entity "aws_iam_user_policy_attachment" {
-    + user (Required)
-    + policy_arn (Required)
-}
-
-entity "aws_iam_group_policy_attachment" {
-    + group (Required)
-    + policy_arn (Required)
-}
-
-entity "aws_iam_role_policy_attachment" {
-    + role (Required)
-    + policy_arn (Required)
-}
-
-entity "aws_iam_group_membership" {
-    + name (Required)
-    + users (Required)
-    + group (Required)
-}
-
-
-aws_iam_role --o{ aws_iam_role_policy_attachment
-aws_iam_policy --o{ aws_iam_role_policy_attachment
-
-aws_iam_user --o{ aws_iam_user_policy_attachment
-aws_iam_policy --o{ aws_iam_user_policy_attachment
-
-aws_iam_policy --o{ aws_iam_group_policy_attachment
-aws_iam_group --o{ aws_iam_group_policy_attachment
-aws_iam_group --o{ aws_iam_group_membership
-aws_iam_user --o{ aws_iam_group_membership
-
-@enduml
-```
 ## Module Design
 
 ### Reference among modules
