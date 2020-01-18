@@ -4,6 +4,7 @@
 
 - Terraform 0.12.18
 - Ruby 2.x
+- coreutils
 
 ## UML
 
@@ -95,6 +96,18 @@ https://github.com/hashicorp/terraform/blob/master/terraform/eval_for_each.go#L2
     └── user_policy_attachment.tf
 
     4 directories, 17 files
+    ```
+
+1. Move to your Terraform directory.
+
+    ```
+    ./copy_to_your_repo.sh -d /path/to/your/new/iam-dir -m /path/to/module/iam
+    ```
+
+    example:
+
+    ```
+    ./copy_to_your_repo.sh -d $HOME/terraform/aws/iam -m $HOME/terraform/aws/modules/iam
     ```
 
 ## Import the existing resources into the module
