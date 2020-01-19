@@ -30,9 +30,9 @@ if [ ! -f $TF_STATE -o $FORCE ]; then
 fi
 echo "[convert] copy"
 rm -f $CONVERT_DIR/output.tf
-rm -f $CONVERT_DIR/group_policy_attachment.tf
-rm -f $CONVERT_DIR/role_policy_attachment.tf
-rm -f $CONVERT_DIR/user_policy_attachment.tf
+rm -f $CONVERT_DIR/group-policy-attachment.tf
+rm -f $CONVERT_DIR/role-policy-attachment.tf
+rm -f $CONVERT_DIR/user-policy-attachment.tf
 cp $IMPORT_DIR/*tf $CONVERT_DIR
 cp $TF_CONVERT/main.tf $CONVERT_DIR
 cd $CONVERT_DIR
@@ -129,7 +129,7 @@ rm -f terraform.tfstate.*
 echo "[convert] iamgm mv state done"
 
 echo "[convert] iamgm create group_membership.tf"
-tf=group_membership.tf; rm -f $tf;
+tf=group-membership.tf; rm -f $tf;
 printf "module \"group-membership\"{\nsource=\"$GROUP_MEMBERSHIP_MODULE_PATH\"\ngroup_memberships = {\n" >> $tf
 
 for g in `grep aws_iam_group_membership iamgm.tf | sed 's/.*aws_iam_group_membership" "\(.*\)".*/\1/'`; do user_str=`grep -A 2 -e "aws_iam_group_membership\" \"$g\"" iamgm.tf | grep users | sed -e 's/.*users = \[\([^]]*\)\]/\1/' -e 's/\"//g' -e 's/,//g'`; printf "\"$g\"=[\n" >>$tf; for u in `printf "$user_str"`; do printf "module.user.users[\"$u\"].name,\n" >> $tf; done; printf "],\n" >> $tf; done; printf "}\n}\n" >> $tf
@@ -147,7 +147,7 @@ for a in `terraform state list | grep '^aws_iam_group_policy_attachment\.' | sed
 rm -f terraform.tfstate.*
 echo "[convert] $resource mv state done"
 
-tf=group_policy_attachment.tf; rm -rf $tf;
+tf=group-policy-attachment.tf; rm -rf $tf;
 echo "[convert] create $tf"
 printf "module \"group-policy-attachment\"{\nsource=\"$GROUP_POLICY_ATTACHMENT_MODULE_PATH\"\ngroup_policy_pairs=[\n" >> $tf
 # AWS Managed Policy
@@ -176,7 +176,7 @@ done
 rm -f terraform.tfstate.*
 echo "[convert] $resource mv state done"
 
-tf=role_policy_attachment.tf; rm -rf $tf;
+tf=role-policy-attachment.tf; rm -rf $tf;
 echo "[convert] create $tf"
 printf "module \"role-policy-attachment\"{\nsource=\"$ROLE_POLICY_ATTACHMENT_MODULE_PATH\"\nrole_policy_pairs=[\n" >> $tf
 # AWS Managed Policy
@@ -205,7 +205,7 @@ done
 rm -f terraform.tfstate.*
 echo "[convert] $resource mv state done"
 
-tf=user_policy_attachment.tf; rm -rf $tf;
+tf=user-policy-attachment.tf; rm -rf $tf;
 echo "[convert] create $tf"
 printf "module \"user-policy-attachment\"{\nsource=\"$USER_POLICY_ATTACHMENT_MODULE_PATH\"\nuser_policy_pairs=[\n" >> $tf
 # AWS Managed Policy
