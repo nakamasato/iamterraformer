@@ -8,7 +8,7 @@
 
 ## UML
 
-![sequence dialog](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/nakamasato/iamterraformer/master/uml/iam_resource_uml.txt)
+![sequence dialog](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/nakamasato/iamterraformer/master/uml/iam.txt)
 
 ## Module Design
 
