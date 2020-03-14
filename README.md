@@ -2,7 +2,8 @@
 
 ## Prerequisite
 
-- Terraform 0.12.18
+- Terraform 0.12.23
+- terraform-provider-aws 2.53
 - Ruby 2.x
 - coreutils
 
